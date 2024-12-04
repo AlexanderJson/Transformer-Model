@@ -11,28 +11,16 @@ glove_model = load(f'glove-wiki-gigaword-{dims}')
 
 ## Temporary function until api
 def encode_input():
-    user_input = input("USER: ")
-    sentence = user_input.split()
-    embeddings = []
+        user_input = input("USER: ")
+        sentence = user_input.split()
+        embeddings = []
 
-    for message in sentence:
-        if message in glove_model:
-            embeddings.append(glove_model[message])
-        else: 
-            print(f"Words could not be embedded") ##TODO Randomize here.
-    return np.array(embeddings)
-
-def decode_output(vector):
-    closest_similarity = -1
-    closest_word = None
-
-    for word in glove_model.key_to_index:
-        similarity = np.dot(glove_model[word], vector) / (np.linalg.norm(glove_model[word])
-        * np.linalg.norm(vector))
-        if similarity > closest_similarity:
-            closest_similarity = similarity
-            closest_word = word
-    return closest_word
+        for message in sentence:
+            if message in glove_model:
+                embeddings.append(glove_model[message])
+            else: 
+                print(f"Words could not be embedded") ##TODO Randomize here.
+        return np.array(embeddings)
 
 ## UTIL functions
 
@@ -69,24 +57,13 @@ def attention():
     attention_score = softmax(scaled_attention_score)
 
     full_output = np.dot(attention_score, value)
-    reduced_output = np.sum(full_output, axis=0)
-    next_word = decode_output(reduced_output)
-    print(next_word)
+    print(full_output)
+    return full_output
 attention()
 
 
 
 
-
-
-## forward prop:
-
-## input layer * queryWeight, keyWeight, valueWeight (+bias)
-
-## for each word:
-## estimations = query * key = queryKey T * value
-
-## softmax(value) = output
 
 
 ## back prop: 
@@ -107,3 +84,7 @@ attention()
 ## multiplyMatrix()
 
 
+
+
+## NOTE: Must find a way to make AI write a proper response but know when to stop. Perhaps 
+## relational treaining? Question -> Answer ?

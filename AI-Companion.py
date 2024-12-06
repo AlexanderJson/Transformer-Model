@@ -56,9 +56,9 @@ def attention():
 
     attention_score = softmax(scaled_attention_score)
 
-    full_output = np.dot(attention_score, value)
-    print(full_output)
-    return full_output
+    transformed_input = np.dot(attention_score, value)
+    
+    
 attention()
 
 

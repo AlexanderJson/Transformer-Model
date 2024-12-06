@@ -3,10 +3,12 @@ import numpy as np
 import math 
 
 dims = 300
+cols = 300
 
 ## 300 dimensions TODO: Download locally/or database
 glove_model = load(f'glove-wiki-gigaword-{dims}')
 
+### ENCODER ###
 
 
 ## Temporary function until api
@@ -33,12 +35,30 @@ def random_matrix(rows,cols):
     rand_matrix = np.random.rand(rows, cols)
     return rand_matrix
 
+def FFN(matrix):
+    ## ScaleUp Weight + Bias
+    S_W = random_matrix(dims,cols)
+    S_B = random_matrix(1, cols)
+    upscaled =  np.dot(matrix, S_W) + S_B
+    ReLU_activation =  np.maximum(0, upscaled)
+    ## Compress Weight + Bias
+    C_W = random_matrix(dims,cols)
+    C_B = random_matrix(1, cols)
+    return np.dot(ReLU_activation, C_W) + C_B
 
-def attention():
-    input_matrix = encode_input()
+def residual_connection(input_matrix, transformed_output):
+    return input_matrix + transformed_output
+
+def normalise_matrix(matrix, epsilon=1e-6):
+    mean = np.mean(matrix, axis=-1, keepdims=True)
+    variance = np.var(matrix, axis=-1, keepdims=True)
+    normalised_matrix = (matrix - mean) / np.sqrt(variance + epsilon)
+    gamma = np.ones(matrix.shape[-1])
+    beta = np.zeros(matrix.shape[-1])
+    return gamma * normalised_matrix + beta
+
+def attention(input_matrix):
     
-    cols = 300
-
     W_Q = random_matrix(dims,cols)
     W_K = random_matrix(dims,cols)
     W_V = random_matrix(dims,cols)
@@ -56,14 +76,20 @@ def attention():
 
     attention_score = softmax(scaled_attention_score)
 
-    transformed_input = np.dot(attention_score, value)
+    return np.dot(attention_score, value)
+
+
+def encoder():
+    input_matrix = encode_input()
+    ## PE here
+    attention = attention(input_matrix)
+    upscaled_input = FFN(attention)
+    residual_connection = residual_connection(upscaled_input)
+    return normalise_matrix(residual_connection)
+
+
     
     
-attention()
-
-
-
-
 
 
 ## back prop: 

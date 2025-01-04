@@ -22,13 +22,30 @@ def encode_input():
                 embeddings.append(glove_model[message])
             else: 
                 print(f"Words could not be embedded") ##TODO Randomize here.
+                embeddings.append(np.random.rand(dims))
         return np.array(embeddings)
+
+
+def positional_encoding(input, dims):
+    position = np.arange(input)[:, np.newaxis]
+    div_term = np.exp(np.arange(0, dims, 2) * -(math.log(10000.0) / dims))
+
+    PE = np.zeros((input, dims))
+    PE[:, 0::2] = np.sin(position * div_term)
+    PE[:, 1::2] = np.cos(position * div_term)
+    return PE
 
 ## UTIL functions
 
 def softmax(matrix):
     exp = np.exp(matrix - np.max(matrix))
     return exp / np.sum(exp, axis=  -1, keepdims=True)
+
+def masked_input(matrix):
+    rows, columns = matrix.shape
+    if rows != columns:
+        raise ValueError("Invalid format for matrix")
+    return np.triu(np.ones((rows,columns)), k=1) * -1e9
 
 ## static values for dims later?
 def random_matrix(rows,cols):
@@ -73,22 +90,35 @@ def attention(input_matrix):
     scaling = np.sqrt(d_k)
     
     scaled_attention_score = raw_attention_score / scaling
-
-    attention_score = softmax(scaled_attention_score)
-
+    masked_scores = masked_input(scaled_attention_score)
+    attention_score = softmax(masked_scores)
     return np.dot(attention_score, value)
 
+def predict_next_word(attention_output):
+    logits = np.dot(attention_output, random_matrix(cols,dims))
+    return softmax(logits)
 
-def encoder():
+
+def decoder():
     input_matrix = encode_input()
+    input_length = input_matrix.shape[0]
+
+    pe_matrix = positional_encoding(input_length, dims)
+    input_with_pe = input_matrix + pe_matrix
+
     ## PE here
-    attention = attention(input_matrix)
-    upscaled_input = FFN(attention)
-    residual_connection = residual_connection(upscaled_input)
-    return normalise_matrix(residual_connection)
+    attention_matrix = attention(input_with_pe)
+    upscaled_input = FFN(attention_matrix)
+    residual_matrix = residual_connection(input_with_pe, upscaled_input)
+    normalised_output = normalise_matrix(residual_matrix)
+    next_token_probability = predict_next_word(normalised_output)
+    output_vector = next_token_probability.mean(axis=0)
+    output_vector /= np.linalg.norm(output_vector)
+    closest_word = glove_model.similar_by_vector(output_vector, topn=1)[0][0]
+    print(closest_word)
+decoder()
 
 
-    
     
 
 
